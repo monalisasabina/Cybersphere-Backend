@@ -79,7 +79,7 @@ class Downloads(db.Model, SerializerMixin):
     filename = db.Column(db.String(100), nullable= False)
     file_url =db.Column(db.String(100), nullable=False)
     description = db.Column(db.String, nullable= False)
-    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
       
     def __repr__(self):
         return f"<Downloads {self.filename}>"
