@@ -7,7 +7,7 @@ from models import db
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///church.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///cybersphere.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
