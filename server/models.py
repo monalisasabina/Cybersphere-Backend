@@ -85,4 +85,21 @@ class Downloads(db.Model, SerializerMixin):
         return f"<Downloads {self.filename}>"
     
 
+class BlogPost(db.Model, SerializerMixin):
+    __tablename__='blog_posts'
 
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), unique=True, nullable=False)
+    # A slug is a URL-friendly, human-readable string used to identify a resource (like a blog post) on a website.
+    # example: https://example.com/blog/how-our-engineers-delivered-under-budget
+    content = db.Column(db.Text, nullable=False)
+    author = db.Column(db.String(100), nullable=False)
+    image_url = db.Column(db.String(300))
+    category = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_published = db.Column(db.Boolean, default=False)
+
+    def __repr__(self):
+        return f'<BlogPost {self.title}'

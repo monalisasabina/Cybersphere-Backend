@@ -11,6 +11,7 @@ flask = "*"
 flask-migrate = "*"
 flask-restful = "*"
 flask-cors = "*"
+flask-jwt-extended = "*"
 
 [dev-packages]
 
