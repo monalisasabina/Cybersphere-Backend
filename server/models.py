@@ -3,6 +3,7 @@ from sqlalchemy_serializer import SerializerMixin
 from datetime import datetime
 from flask_bcrypt import Bcrypt
 
+
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 

@@ -1,24 +1,43 @@
 from app import app
 from models import db, User, Project, Image, Downloads, BlogPost
 from datetime import datetime
+from werkzeug.security import generate_password_hash
+import random
+import secrets
+
 
 # It generates a slug from a blogpost title
 def generate_slug(title):
     return title.lower().replace(' ', '-').replace(',', '').replace('.', '')
+
+roles = ['engineer','project manager', 'designer']
+
+random_password =secrets.token_urlsafe(8)
 
 with app.app_context():
     db.session.query(User).delete()
     db.session.query(Project).delete()
     db.session.query(Image).delete()
     db.session.query(Downloads).delete()
+    db.session.query(BlogPost).delete()
 
     print('\nCYBERSPHERE SEEDING DATA')
     print('________________________________________________________________________________________________')
 
     print('\nAdding users...')
-    users = [
-        User(username=f'user{i}', email=f'user{i}@example.com', role='engineer', password='password') for i in range(1, 11)
-    ]
+    
+    users = []
+    for i in range(1,11):
+        is_admin = random.choice([True, False])
+
+        user = User(
+            username=f'user{i}',
+            email=f'user{i}@domain.com',
+            role='admin' if is_admin else random.choice(roles),
+            is_admin=is_admin,
+            password=generate_password_hash(random_password)
+        )
+        users.append(user)
 
     print('\nAdding Projects...')
     projects = [
@@ -27,7 +46,7 @@ with app.app_context():
 
     print('\nAdding Images...  ')
     images = [
-        Image(caption=f'Project {i} Image', url=f'/static/images/project{i}.jpg', is_in_gallery=True, project=projects[i-1]) for i in range(1, 11)
+        Image(caption=f'Project {i} Image', url=f'/static/images/project{i}.jpg', is_in_gallery= random.choice([True, False]), project=projects[i-1]) for i in range(1, 11)
     ]
  
     print('\nAdding Downloads...  ')
@@ -46,7 +65,7 @@ with app.app_context():
             category='Insights' if i % 2 == 0 else 'News',
             # created_at=datetime.utcnow(),
             # updated_at=datetime.utcnow(),
-            is_published=True
+            is_published= random.choice([True, False])
         ) for i in range(1, 11)
     ]
 
