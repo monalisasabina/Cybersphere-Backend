@@ -12,6 +12,8 @@ flask-migrate = "*"
 flask-restful = "*"
 flask-cors = "*"
 flask-jwt-extended = "*"
+faker = "*"
+python-dotenv = "*"
 
 [dev-packages]
 

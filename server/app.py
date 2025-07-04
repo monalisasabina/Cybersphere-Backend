@@ -3,21 +3,25 @@ from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_cors import CORS
 from models import db,User
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager, create_access_token
 import random
+import os
+
+load_dotenv()
 
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///cybersphere.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 app.json.compact = False
-ADMIN_CODE = 'admin1234'
 
 migrate = Migrate(app, db)
 db.init_app(app)
 api = Api(app)
 CORS(app)
+jwt= JWTManager(app)
 
 # HOME PAGE
 class Home(Resource):
@@ -130,6 +134,40 @@ class SignUp(Resource):
         },201
     
 api.add_resource(SignUp,'/signup', endpoint='signup')
+
+class Login(Resource):
+    def post(self):
+         data = request.get_json()
+
+         if not data:
+             return{'error':'Invalid JSON format'},400
+         
+         identifier = data.get('username') or data.get('email')
+         password = data.get('password')
+
+         if not identifier or not password:
+             return{'error':'Username/email and password are required'},400
+         
+         user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
+
+         if not user or not user.check_password(password):
+             return{'error':'Invalid credentials'}, 401
+        
+         access_token = create_access_token(identity={'id':user.id})
+
+         return{
+             'message':'Login successful',
+             'access_token':access_token,
+             'user':{
+                 'id':user.id,
+                 'username':user.username,
+                 'email':user.email,
+                 'is_admin':user.is_admin,
+             }
+         },200
+         
+
+api.add_resource(Login, '/login', endpoint='/login')        
 
         
 
