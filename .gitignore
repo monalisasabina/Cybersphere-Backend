@@ -1,1 +1,16 @@
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+
+# Ignore local database
+instance/
+*.db
+
+# Ignore environment config
 .env
+
+# Ignore migration cache files (optional)
+migrations/__pycache__/
+
+# VSCode or other editor settings (optional)
+.vscode/
