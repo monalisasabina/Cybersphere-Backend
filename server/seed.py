@@ -2,8 +2,10 @@ from app import app
 from models import db, User, Project, Image, Downloads, BlogPost
 from datetime import datetime
 from werkzeug.security import generate_password_hash
+from faker import Faker
 import random
 import secrets
+
 
 
 # It generates a slug from a blogpost title
@@ -13,6 +15,8 @@ def generate_slug(title):
 roles = ['engineer','project manager', 'designer']
 
 random_password =secrets.token_urlsafe(8)
+
+fake= Faker()
 
 with app.app_context():
     db.session.query(User).delete()
@@ -25,12 +29,13 @@ with app.app_context():
     print('________________________________________________________________________________________________')
 
     print('\nAdding users...')
-    
     users = []
     for i in range(1,11):
         is_admin = random.choice([True, False])
 
         user = User(
+            firstname=fake.first_name(),
+            lastname=fake.last_name(),
             username=f'user{i}',
             email=f'user{i}@domain.com',
             role='admin' if is_admin else random.choice(roles),
