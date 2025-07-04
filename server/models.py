@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
 from datetime import datetime
 from flask_bcrypt import Bcrypt
+import random
 
 
 db = SQLAlchemy()

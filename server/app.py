@@ -4,6 +4,7 @@ from flask_restful import Api, Resource
 from flask_cors import CORS
 from models import db,User
 from flask_jwt_extended import JWTManager
+import random
 
 
 app = Flask(__name__)
@@ -34,7 +35,48 @@ api.add_resource(Home,'/')
 # _________________________________________________________
 # Authentication
 
+# Username Suggestions
+class UsernameSuggestion(Resource):
 
+    def post(self):
+        data = request.get_json()
+
+        firstname = data.get('firstname').strip().lower()
+        lastname = data.get('lastname').strip().lower()
+
+        if not firstname or not lastname:
+            return{'error': 'Firstname and lastname are required'}, 400
+        
+        base_suggestions = [
+            f'{firstname}{lastname}',
+            f'{firstname}_{lastname}',
+            f'{firstname}{random.randint(100,999)}',
+            f"{lastname}_{random.randint(1, 100)}",
+            f"{firstname[0]}{lastname}",
+            f"{lastname}{random.randint(1, 1000)}",
+        ]
+
+        suggestions = []
+        for suggestion in base_suggestions:
+
+            # Checks if the username already exists in the database
+            #  if None, its available
+            if not User.query.filter_by(username=suggestion).first():
+                suggestions.append(suggestion)
+
+            if len(suggestions) == 3:
+                break
+
+        # Fallback Generator: if all suugestions are taken. Others are generated
+        while len(suggestions) < 3:
+            alt = f"{firstname}{random.randint(1000,9999)}"
+
+            if not User.query.filter_by(username=alt).first():
+                suggestions.append(alt)
+
+        return{'suggestions':suggestions}, 200
+
+api.add_resource(UsernameSuggestion,'/suggest-username', endpoint='suggest-username')
 
 # Sign Up
 class SignUp(Resource):
@@ -63,6 +105,8 @@ class SignUp(Resource):
             return{'error':'Email already taken'},400
         
         new_user = User(
+            firstname = firstname,
+            lastname = lastname,
             username = username,
             email =  email,
             role=role,
@@ -77,6 +121,9 @@ class SignUp(Resource):
             'message': 'User created succesfully',
             'user': {
                 'id':new_user.id,
+                'firstname':new_user.firstname,
+                'lastname':new_user.lastname,
+                'email':new_user.email,
                 'username':new_user.username,
                 'is_admin':new_user.is_admin
             }
