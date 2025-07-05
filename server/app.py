@@ -3,21 +3,25 @@ from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_cors import CORS
 from models import db,User
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from dotenv import load_dotenv
+from datetime import timedelta
 import random
 import os
 
 load_dotenv()
 
 app = Flask(__name__)
-
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'fallback=secret-key')
 
-# print("JWT_SECRET_KEY:", os.getenv("JWT_SECRET_KEY"))
-# print("Type of JWT_SECRET_KEY:", type(os.getenv("JWT_SECRET_KEY")))
+# [LOGOUT] Blacklisting the token
+app.config['JWT_BLACKLIST_ENABLED'] = True
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
+
+# [CHECKSESSION] Adding token expiration
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
 app.json.compact = False
 
@@ -27,6 +31,15 @@ api = Api(app)
 CORS(app)
 jwt= JWTManager(app)
 
+# [LOGOUT] Create a store to keep track of revoked token
+revoked_tokens = set()
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    return jwt_payload["jti"] in revoked_tokens
+
+
+
+# ________________________________________________________
 # HOME PAGE
 class Home(Resource):
     def get(self):
@@ -139,6 +152,8 @@ class SignUp(Resource):
     
 api.add_resource(SignUp,'/signup', endpoint='signup')
 
+
+# Login
 class Login(Resource):
     def post(self):
          data = request.get_json()
@@ -159,9 +174,9 @@ class Login(Resource):
         
          access_token = create_access_token(identity=str(user.id))
 
-         print('\n')
-         print(access_token)
-         print('\n')
+        #  print('\n')
+        #  print(access_token)
+        #  print('\n')
         
          return{
              'message':'Login successful',
@@ -177,6 +192,8 @@ class Login(Resource):
 
 api.add_resource(Login, '/login', endpoint='/login')        
 
+
+# Check session
 class CheckSession(Resource):
     
     #decorator checks for a valid JWT TOKEN
@@ -187,7 +204,7 @@ class CheckSession(Resource):
         # Gives you whatever was set as identity(user ID)
         identity = get_jwt_identity()
 
-        print(identity)
+        # print(identity)
 
         user = db.session.get(User, identity)
 
@@ -206,6 +223,16 @@ class CheckSession(Resource):
     
 api.add_resource(CheckSession, '/check_session', endpoint='/check_session')
 
+# Log out
+class Logout(Resource):
+    @jwt_required()
+
+    def delete(self):
+        jti = get_jwt()["jti"]
+        revoked_tokens.add(jti)
+        return{'message':'Logged out successfully'},200
+    
+api.add_resource(Logout, '/logout', endpoint='/logout')
 
 
 
