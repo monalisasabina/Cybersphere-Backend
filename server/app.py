@@ -3,18 +3,22 @@ from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_cors import CORS
 from models import db,User
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from dotenv import load_dotenv
 import random
 import os
 
 load_dotenv()
-
 
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+
+# print("JWT_SECRET_KEY:", os.getenv("JWT_SECRET_KEY"))
+# print("Type of JWT_SECRET_KEY:", type(os.getenv("JWT_SECRET_KEY")))
+
 app.json.compact = False
 
 migrate = Migrate(app, db)
@@ -153,8 +157,12 @@ class Login(Resource):
          if not user or not user.check_password(password):
              return{'error':'Invalid credentials'}, 401
         
-         access_token = create_access_token(identity={'id':user.id})
+         access_token = create_access_token(identity=str(user.id))
 
+         print('\n')
+         print(access_token)
+         print('\n')
+        
          return{
              'message':'Login successful',
              'access_token':access_token,
@@ -169,7 +177,34 @@ class Login(Resource):
 
 api.add_resource(Login, '/login', endpoint='/login')        
 
+class CheckSession(Resource):
+    
+    #decorator checks for a valid JWT TOKEN
+    @jwt_required()
+
+    def get(self):
+
+        # Gives you whatever was set as identity(user ID)
+        identity = get_jwt_identity()
+
+        print(identity)
+
+        user = db.session.get(User, identity)
+
+        if not user:
+            return {'error':'User not found'},404
         
+        return{
+            'message':'User is authenticated',
+            'user':{
+                'id':user.id,
+                'username':user.username,
+                'email':user.email,
+                'is_admin':user.is_admin
+            }
+        },200
+    
+api.add_resource(CheckSession, '/check_session', endpoint='/check_session')
 
 
 
