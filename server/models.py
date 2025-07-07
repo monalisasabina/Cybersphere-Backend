@@ -108,3 +108,11 @@ class BlogPost(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f'<BlogPost {self.title}'
+    
+    
+class RevokedToken(db.Model, SerializerMixin):
+        id = db.Column(db.Integer, primary_key=True)
+        jti = db.Column(db.String(120), nullable=False, unique=True)
+
+        def __repr__(self):
+            return f"<RevokedToken {self.jti}>"

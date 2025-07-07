@@ -2,7 +2,7 @@ from flask import Flask,request
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_cors import CORS
-from models import db,User
+from models import db,User, RevokedToken
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -11,6 +11,7 @@ import os
 
 load_dotenv()
 
+# Flask app setup
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -25,18 +26,35 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
 app.json.compact = False
 
+# Initialize extensions
 migrate = Migrate(app, db)
 db.init_app(app)
 api = Api(app)
 CORS(app)
 jwt= JWTManager(app)
 
-# [LOGOUT] Create a store to keep track of revoked token
-revoked_tokens = set()
+# ─────────────────────────────────────────────────────────────
+# JWT Revocation Check
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header, jwt_payload):
-    return jwt_payload["jti"] in revoked_tokens
+    jti = jwt_payload["jti"]
+    return db.session.query(RevokedToken).filter_by(jti=jti).first() is not None
 
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return {'message': 'Token expired, please log in again.'}, 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(reason):
+    return {'message': f'Invalid token: {reason}'}, 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(reason):
+    return {'message': f'Missing or invalid token: {reason}'}, 401
+
+@jwt.revoked_token_loader
+def revoked_token_callback(jwt_header, jwt_payload):
+    return {'message': 'Token has been revoked. Please log in again.'}, 401
 
 
 # ________________________________________________________
@@ -97,7 +115,7 @@ class UsernameSuggestion(Resource):
 
         return{'suggestions':suggestions}, 200
 
-api.add_resource(UsernameSuggestion,'/suggest-username', endpoint='suggest-username')
+api.add_resource(UsernameSuggestion,'/suggest-username')
 
 # Sign Up
 class SignUp(Resource):
@@ -114,7 +132,7 @@ class SignUp(Resource):
         is_admin = data.get('is_admin', False)
 
         if not username or not password or not email or not role or not firstname or not lastname:
-            return{'error':'Firstname, Lastname, Username, email, role and password required'}
+            return{'error':' All fields are required'},400
 
         if is_admin and role != 'admin':
             return {'error':'Only users with an admin role can be set as an admin'}, 400
@@ -150,7 +168,7 @@ class SignUp(Resource):
             }
         },201
     
-api.add_resource(SignUp,'/signup', endpoint='signup')
+api.add_resource(SignUp,'/signup')
 
 
 # Login
@@ -186,11 +204,12 @@ class Login(Resource):
                  'username':user.username,
                  'email':user.email,
                  'is_admin':user.is_admin,
+                 'role':user.role
              }
          },200
          
 
-api.add_resource(Login, '/login', endpoint='/login')        
+api.add_resource(Login, '/login')        
 
 
 # Check session
@@ -203,36 +222,52 @@ class CheckSession(Resource):
 
         # Gives you whatever was set as identity(user ID)
         identity = get_jwt_identity()
-
         # print(identity)
-
         user = db.session.get(User, identity)
 
         if not user:
             return {'error':'User not found'},404
         
+        # Checking if token was revoked
+        jti =get_jwt()["jti"]
+        if db.session.query(RevokedToken).filter_by(jti=jti).first():
+            return {'error':"Session is invalid(logged out)"},401
+
         return{
             'message':'User is authenticated',
             'user':{
                 'id':user.id,
                 'username':user.username,
                 'email':user.email,
-                'is_admin':user.is_admin
+                'is_admin':user.is_admin,
+                'role':user.role
             }
         },200
     
-api.add_resource(CheckSession, '/check_session', endpoint='/check_session')
+api.add_resource(CheckSession, '/check_session')
 
-# Log out
+
+# LOGOUT
 class Logout(Resource):
     @jwt_required()
 
     def delete(self):
         jti = get_jwt()["jti"]
-        revoked_tokens.add(jti)
+        revoked = RevokedToken(jti=jti)
+        db.session.add(revoked)
+        db.session.commit()
         return{'message':'Logged out successfully'},200
     
-api.add_resource(Logout, '/logout', endpoint='/logout')
+api.add_resource(Logout, '/logout')
+
+# Dashboard
+class Dashboard(Resource):
+    @jwt_required()
+
+    def get(self):
+        return {'message':'Welcome to the protected route!'},200
+    
+api.add_resource(Dashboard, '/dashboard')    
 
 
 
