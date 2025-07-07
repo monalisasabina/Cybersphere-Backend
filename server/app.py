@@ -1,4 +1,4 @@
-from flask import Flask,request
+from flask import Flask,request, make_response, jsonify
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_cors import CORS
@@ -65,6 +65,7 @@ class Home(Resource):
             "message":" Welcome to the CyberSphere Build Design API ",
             "Api_version":"v1",
             "available_endpoints":[
+                "/users"
               
             ]
         },200
@@ -72,7 +73,7 @@ class Home(Resource):
 api.add_resource(Home,'/')
 
 # _________________________________________________________
-# Authentication
+# Authentication USERS
 
 # Username Suggestions
 class UsernameSuggestion(Resource):
@@ -268,6 +269,159 @@ class Dashboard(Resource):
         return {'message':'Welcome to the protected route!'},200
     
 api.add_resource(Dashboard, '/dashboard')    
+
+# Change Password
+class ChangePassword(Resource):
+
+    @jwt_required()
+
+    def patch(self):
+
+        current_user_id = get_jwt_identity()
+
+        user = User.query.get(current_user_id)
+
+        if not user:
+            return {"error":"User not found"},404
+        
+        data = request.get_json()
+
+        old_password = data.get('old_password')
+        new_password = data.get('new_password')
+
+        if not old_password or not user.check_password(old_password):
+            return {"error":"Incorrect old password"},400
+        
+        if not new_password or  len(new_password) <8:
+            return {"error":"Password must be at least 8 characters long"},400
+        
+
+        user.password = new_password
+
+        db.session.commit()
+
+        return {"message":"Password updated successfully"},200
+
+api.add_resource(ChangePassword, '/changepassword')
+
+
+# Fetching users
+class Users(Resource):
+
+    @jwt_required()
+    
+    def get(self):
+
+        users_list=[]
+
+        for user in User.query.all():
+
+            user_dict = {
+                "id":user.id,
+                "firstname":user.firstname,
+                "lastname":user.lastname,
+                "username":user.username,
+                "email":user.email,
+                "role":user.role,
+                "is_admin":user.is_admin,
+            }
+
+            users_list.append(user_dict)
+
+        return make_response(jsonify(users_list),200)
+
+
+api.add_resource(Users, '/users')      
+
+
+# Users By ID
+class User_by_ID(Resource):
+
+    # Fetching User By ID
+    @jwt_required()
+    def get(self,id):
+
+        user = User.query.filter(User.id==id).first()
+        if not user:
+            return {'error': 'User not found'}
+        
+        
+        user_dict = {
+                "id":user.id,
+                "firstname":user.firstname,
+                "lastname":user.lastname,
+                "username":user.username,
+                "email":user.email,
+                "role":user.role,
+                "is_admin":user.is_admin,
+            }
+        
+        return make_response(jsonify(user_dict),200)
+    
+    # Updating User by ID
+    @jwt_required()
+    def patch(self,id):
+
+        user = User.query.filter(User.id==id).first()
+
+        current_user_id = int(get_jwt_identity())
+        current_user = User.query.get(current_user_id)
+
+        # Only self or admin can update
+        if current_user.id != user.id and not current_user.is_admin:
+            return {"error": "Unauthorized"}, 403
+
+        data = request.get_json()
+
+        if not user:
+            return {"error":"User not found"}
+        
+        try:
+            for attr in data:
+                setattr(user, attr, data[attr])
+
+            db.session.commit()
+
+            user_dict = {
+                "id":user.id,
+                "firstname":user.firstname,
+                "lastname":user.lastname,
+                "username":user.username,
+                "email":user.email,
+                "role":user.role,
+                "is_admin":user.is_admin,
+            }
+
+            return user_dict,200
+        
+        except Exception as e:
+            return {"error": "Validation errors", "details": str(e)}, 400
+        
+    # Deleting a user
+    @jwt_required()
+    def delete(self,id):
+
+        user = User.query.filter(User.id == id).first()
+
+        if not user:
+          return make_response(jsonify({"error":"User not found"}),404)
+      
+        current_user_id = int(get_jwt_identity())
+        current_user = User.query.get(current_user_id)
+
+        # Only self or admin can update
+        if current_user.id != user.id and not current_user.is_admin:
+            return {"error": "Unauthorized"}, 403
+        
+        
+        db.session.delete(user)
+        db.session.commit()
+
+        response_dict = {"Message":"User successfully deleted"}
+
+        return make_response(jsonify(response_dict),200)
+  
+api.add_resource(User_by_ID, '/users/<int:id>')    
 
 
 
