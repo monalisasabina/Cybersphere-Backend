@@ -26,6 +26,10 @@ jobs:
                 pip install pipenv
                 pipenv install --dev
 
+            - name: Check Python syntax
+              run: |
+                 find . -name "*.py" -exec python -m py_compile {} \;
+
             
 
 
