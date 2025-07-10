@@ -413,7 +413,6 @@ class User_by_ID(Resource):
         if current_user.id != user.id and not current_user.is_admin:
             return {"error": "Unauthorized"}, 403
         
-        
         db.session.delete(user)
         db.session.commit()
 
