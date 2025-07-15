@@ -2,8 +2,10 @@ from flask import Flask,request, make_response, jsonify
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_cors import CORS
-from models import db,User, RevokedToken
+from flask_mail import Mail, Message
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
+from models import db,User, RevokedToken
+from werkzeug.security import generate_password_hash
 from dotenv import load_dotenv
 from datetime import timedelta
 import random
@@ -24,6 +26,13 @@ app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
 # [CHECKSESSION] Adding token expiration
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
+# [MAIL] Configure mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+
 app.json.compact = False
 
 # Initialize extensions
@@ -32,6 +41,7 @@ db.init_app(app)
 api = Api(app)
 CORS(app)
 jwt= JWTManager(app)
+mail = Mail(app)
 
 # ─────────────────────────────────────────────────────────────
 # JWT Revocation Check
@@ -261,6 +271,62 @@ class Logout(Resource):
     
 api.add_resource(Logout, '/logout')
 
+# FORGOT PASSWORD
+class ForgotPassword(Resource):
+
+    def post(self):
+        data = request.get_json()
+        email = data.get('email')
+
+        if not email:
+            return{'error': 'Email is required'}, 400
+        
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return{'message':'If the email is registered, a reset link will be sent'}, 200
+        
+        # Create a short-lived token(10 minutes)
+        reset_token = create_access_token(identity=str(user.id), expires_delta=timedelta(minutes=10))
+
+        # url of the frontend's password reset page
+        reset_link = f"http://frontend.com/reset-password?token={reset_token}"
+
+        msg = Message('Password Reset Request', 
+                       sender=app.config['MAIL_USERNAME'],
+                       recipients=[email])
+        
+        msg.body = f"Click this link to reset your password:\n{reset_link}\n\nThis link will expire in 10 minutes."
+
+        mail.send(msg)
+
+        return {'message':'If the email is registered, a reset link will be sent.'},200
+
+api.add_resource(ForgotPassword, '/forgotpassword')
+
+# RESET PASSWORD
+class ResetPassword(Resource):
+
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+        new_password = data.get('new_password')
+
+        if not new_password:
+            return {'error':'New password is required'},400
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        if not user:
+            return {'error':'User not found'},404
+        
+        user.password = new_password
+        db.session.commit()
+
+        return {'message': 'Password has been reset successfully'}
+
+api.add_resource(ResetPassword, '/resetpassword')
+
 # Dashboard
 class Dashboard(Resource):
     @jwt_required()
@@ -269,6 +335,7 @@ class Dashboard(Resource):
         return {'message':'Welcome to the protected route!'},200
     
 api.add_resource(Dashboard, '/dashboard')    
+
 
 # Change Password
 class ChangePassword(Resource):
