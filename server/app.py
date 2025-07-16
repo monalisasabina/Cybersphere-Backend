@@ -4,7 +4,7 @@ from flask_restful import Api, Resource
 from flask_cors import CORS
 from flask_mail import Mail, Message
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
-from models import db,User, RevokedToken
+from models import db,User, RevokedToken, Project
 from werkzeug.security import generate_password_hash
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -505,6 +505,45 @@ class User_by_ID(Resource):
         return make_response(jsonify(response_dict),200)
   
 api.add_resource(User_by_ID, '/users/<int:id>')    
+
+# ___________________________________________________________________________________________________________________________________________
+# PROJECT CRUD
+class Projects(Resource):
+
+    # Displaying all the projects
+    def get(self):
+
+        projects_list = [project.to_dict() for project in Project.query.all()]
+
+        return projects_list,200
+    
+    # Adding projects
+    @jwt_required()
+    def post(self):
+
+        try:
+            data = request.get_json()
+
+            new_project = Project(
+                title = data['title'],
+                description = data['description'],
+                # images = data['images]
+            )
+
+            db.session.add(new_project)
+            db.session.commit()
+
+            return make_response(new_project.to_dict(),201)
+        
+        except Exception as e:
+            return {"error": "Validation errors", "details": str(e)}, 400
+            
+            
+api.add_resource(Projects, '/projects')
+
+
+
+# ____________________________________________________________________________________________________________________________________________
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

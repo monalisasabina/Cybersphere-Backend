@@ -50,6 +50,17 @@ class Project(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f"<Projects {self.title}>"
+    
+    def to_dict(self):
+        return{
+            "id":self.id,
+            "title":self.title,
+            "description":self.description,
+            "date_added":self.date_added.isoformat(),
+            # "images":[image.to_dict() for image in self.image] if self.image else []
+        }
+    
+    # isoformat(): makes datetime JSON serializable
 
 
 class Image(db.Model, SerializerMixin):
@@ -73,6 +84,16 @@ class Image(db.Model, SerializerMixin):
     def __repr__(self):
         return f"<Image {self.caption}>"
     
+    def to_dict(self):
+        return {
+            "id":self.id,
+            "caption":self.caption,
+            "url":self.url,
+            "date_added":self.date_added.isoformat(),
+            "is_in_gallery":self.is_in_gallery,
+            "project_id":self.project_id,
+        }
+    
 
 
 class Downloads(db.Model, SerializerMixin):
@@ -86,6 +107,16 @@ class Downloads(db.Model, SerializerMixin):
       
     def __repr__(self):
         return f"<Downloads {self.filename}>"
+    
+     
+    def to_dict(self):
+        return {
+            "id":self.id,
+            "filename":self.filename,
+            "file_url":self.file_url,
+            "description":self.description,
+            "uploaded_at":self.uploaded_at,
+        }
     
 
 class BlogPost(db.Model, SerializerMixin):
