@@ -32,6 +32,7 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 
 app.json.compact = False
 
@@ -289,19 +290,35 @@ class ForgotPassword(Resource):
         reset_token = create_access_token(identity=str(user.id), expires_delta=timedelta(minutes=10))
 
         # url of the frontend's password reset page
-        reset_link = f"http://frontend.com/reset-password?token={reset_token}"
+        reset_link = f"http://127.0.0.1:5000/resetpassword?token={reset_token}"
 
-        msg = Message('Password Reset Request', 
-                       sender=app.config['MAIL_USERNAME'],
-                       recipients=[email])
+    # ---------------------------------------------------------------------------------------------------------------------------------
+    #    Comment this out when email is set
+        # [REMEMBER]: Change url on reset link
+        return{
+            'message':'Reset token generated (email not sent)',
+            'reset_token':reset_token,
+            'reset_link':reset_link
+        },200
+    
+    # ---------------------------------------------------------------------------------------------------------------------------------
+        # Uncomment when email is set
+        # msg = Message('Password Reset Request', 
+        #                sender=app.config['MAIL_USERNAME'],
+        #                recipients=[email],
+        #                body=f"Click this link to reset your password: {reset_link}"
+        #                )
         
-        msg.body = f"Click this link to reset your password:\n{reset_link}\n\nThis link will expire in 10 minutes."
+        # print("MAIL_USERNAME:", app.config['MAIL_USERNAME'])  # Debug check
 
-        mail.send(msg)
+        # msg.body = f"Click this link to reset your password:\n{reset_link}\n\nThis link will expire in 10 minutes."
 
-        return {'message':'If the email is registered, a reset link will be sent.'},200
+        # mail.send(msg)
 
+        # return {'message':'If the email is registered, a reset link will be sent.'},200
+    #  ----------------------------------------------------------------------------------------------------------------------------
 api.add_resource(ForgotPassword, '/forgotpassword')
+
 
 # RESET PASSWORD
 class ResetPassword(Resource):
@@ -324,8 +341,8 @@ class ResetPassword(Resource):
         db.session.commit()
 
         return {'message': 'Password has been reset successfully'}
-
 api.add_resource(ResetPassword, '/resetpassword')
+
 
 # Dashboard
 class Dashboard(Resource):
@@ -488,8 +505,6 @@ class User_by_ID(Resource):
         return make_response(jsonify(response_dict),200)
   
 api.add_resource(User_by_ID, '/users/<int:id>')    
-
-
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
