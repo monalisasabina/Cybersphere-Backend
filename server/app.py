@@ -142,6 +142,16 @@ class SignUp(Resource):
         email = data.get('email')
         role = data.get('role')
         is_admin = data.get('is_admin', False)
+        admin_code = data.get('admin_code')
+
+        # print(admin_code)
+
+        code = os.getenv('ADMIN_CODE')
+
+        # print(code)
+
+        if not admin_code or admin_code != code:
+            return {"error": "Invalid or missing admin code"},400
 
         if not username or not password or not email or not role or not firstname or not lastname:
             return{'error':' All fields are required'},400
