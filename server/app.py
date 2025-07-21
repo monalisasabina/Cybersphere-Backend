@@ -259,6 +259,7 @@ class CheckSession(Resource):
             'message':'User is authenticated',
             'user':{
                 'id':user.id,
+                'firstname':user.firstname,
                 'username':user.username,
                 'email':user.email,
                 'is_admin':user.is_admin,
@@ -557,3 +558,6 @@ api.add_resource(Projects, '/projects')
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
+
+
+    
