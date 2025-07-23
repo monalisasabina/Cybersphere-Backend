@@ -143,6 +143,7 @@ class SignUp(Resource):
         role = data.get('role')
         is_admin = data.get('is_admin', False)
         admin_code = data.get('admin_code')
+        profile_image = data.get('profile_image')
 
         # print(admin_code)
 
@@ -171,7 +172,8 @@ class SignUp(Resource):
             username = username,
             email =  email,
             role=role,
-            is_admin=is_admin
+            is_admin=is_admin,
+            profile_image = profile_image,
         )
         new_user.password = password
 
@@ -186,7 +188,8 @@ class SignUp(Resource):
                 'lastname':new_user.lastname,
                 'email':new_user.email,
                 'username':new_user.username,
-                'is_admin':new_user.is_admin
+                'is_admin':new_user.is_admin,
+                'profile_image':new_user.profile_image,
             }
         },201
     
@@ -301,7 +304,7 @@ class ForgotPassword(Resource):
         reset_token = create_access_token(identity=str(user.id), expires_delta=timedelta(minutes=10))
 
         # url of the frontend's password reset page
-        reset_link = f"http://127.0.0.1:5000/resetpassword?token={reset_token}"
+        reset_link = f"http://127.0.0.1:5173/resetpassword?token={reset_token}"
 
     # ---------------------------------------------------------------------------------------------------------------------------------
     #    Comment this out when email is set
