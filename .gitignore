@@ -14,3 +14,6 @@ migrations/__pycache__/
 
 # VSCode or other editor settings (optional)
 .vscode/
+
+# Hidding upload folder
+static/uploads

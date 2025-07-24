@@ -6,6 +6,7 @@ from flask_mail import Mail, Message
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from models import db,User, RevokedToken, Project
 from werkzeug.security import generate_password_hash
+from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from datetime import timedelta
 import random
@@ -33,6 +34,10 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+
+# For the UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'static', 'uploads')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 app.json.compact = False
 
@@ -131,6 +136,8 @@ api.add_resource(UsernameSuggestion,'/suggest-username')
 
 # Sign Up
 class SignUp(Resource):
+
+    @jwt_required()
     def post(self):
 
         data = request.get_json()
@@ -519,6 +526,45 @@ class User_by_ID(Resource):
         return make_response(jsonify(response_dict),200)
   
 api.add_resource(User_by_ID, '/users/<int:id>')    
+
+
+class Upload(Resource):
+    
+    # @jwt_required()
+    def post(self):
+        
+        if "image" not in request.files:
+            return jsonify({"error": "No image provide"}),400
+        
+         
+        image = request.files['image']
+
+        if image.filename == '':
+            return jsonify({"error":'No selected file'}),400
+       
+        filename = secure_filename(image.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'],filename)
+        image.save(filepath)
+
+        user_id = get_jwt_identity()
+        # user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
+
+        user = User.query.get()
+
+        if not user:
+            return jsonify({"error": "User not found"}), 400
+        
+        user.profile_image = f'/static/uploads/{filename}'
+        db.session.commit()
+        return {
+            "message":"Image uploaded", 
+            "profile_image": user.profile_image
+            
+            },200
+        
+api.add_resource(Upload, '/upload')
+
 
 # ___________________________________________________________________________________________________________________________________________
 # PROJECT CRUD
