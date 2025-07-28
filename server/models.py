@@ -19,7 +19,7 @@ class User(db.Model, SerializerMixin):
     role = db.Column(db.String(50), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     _password_hash = db.Column(db.String(100), nullable=False)
-    profile_image = db.Column(db.String(255), nullable=False)
+    profile_image = db.Column(db.String(255), nullable=True)
 
     def __repr__(self):
         return f"<User {self.username}>"

@@ -141,6 +141,7 @@ class SignUp(Resource):
     def post(self):
 
         data = request.get_json()
+        print("DATA RECEIVED:", data)
 
         firstname = data.get('firstname')
         lastname = data.get('lastname')
@@ -151,6 +152,7 @@ class SignUp(Resource):
         is_admin = data.get('is_admin', False)
         admin_code = data.get('admin_code')
         profile_image = data.get('profile_image')
+        
 
         # print(admin_code)
 
@@ -164,7 +166,7 @@ class SignUp(Resource):
         if not username or not password or not email or not role or not firstname or not lastname:
             return{'error':' All fields are required'},400
 
-        if is_admin and role != 'admin':
+        if is_admin and role != 'Admin':
             return {'error':'Only users with an admin role can be set as an admin'}, 400
   
         if User.query.filter_by(username=username).first():
@@ -180,7 +182,8 @@ class SignUp(Resource):
             email =  email,
             role=role,
             is_admin=is_admin,
-            profile_image = profile_image,
+            profile_image=profile_image
+            
         )
         new_user.password = password
 
@@ -196,7 +199,7 @@ class SignUp(Resource):
                 'email':new_user.email,
                 'username':new_user.username,
                 'is_admin':new_user.is_admin,
-                'profile_image':new_user.profile_image,
+                'profile_image':new_user.profile_image
             }
         },201
     
@@ -530,7 +533,7 @@ api.add_resource(User_by_ID, '/users/<int:id>')
 
 class Upload(Resource):
     
-    # @jwt_required()
+    @jwt_required()
     def post(self):
         
         if "image" not in request.files:
@@ -547,10 +550,7 @@ class Upload(Resource):
         image.save(filepath)
 
         user_id = get_jwt_identity()
-        # user = User.query.get(user_id)
         user = db.session.get(User, user_id)
-
-        user = User.query.get()
 
         if not user:
             return jsonify({"error": "User not found"}), 400
