@@ -549,17 +549,18 @@ class Upload(Resource):
         filepath = os.path.join(app.config['UPLOAD_FOLDER'],filename)
         image.save(filepath)
 
-        user_id = get_jwt_identity()
-        user = db.session.get(User, user_id)
+        # user_id = get_jwt_identity()
+        # user = db.session.get(User, user_id)
 
-        if not user:
-            return jsonify({"error": "User not found"}), 400
+        # if not user:
+        #     return jsonify({"error": "User not found"}), 400
         
-        user.profile_image = f'/static/uploads/{filename}'
-        db.session.commit()
+        # user.profile_image = f'/static/uploads/{filename}'
+        # db.session.commit()
+
         return {
             "message":"Image uploaded", 
-            "profile_image": user.profile_image
+            "filename":f"/static/uploads/{filename}"
             
             },200
         
