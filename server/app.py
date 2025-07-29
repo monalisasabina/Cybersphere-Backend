@@ -97,15 +97,15 @@ class UsernameSuggestion(Resource):
     def post(self):
         data = request.get_json()
 
-        firstname = data.get('firstname').strip().lower()
-        lastname = data.get('lastname').strip().lower()
+        firstname = (data.get('firstname') or "").strip().lower()
+        lastname = (data.get('lastname') or "").strip().lower()
 
         if not firstname or not lastname:
             return{'error': 'Firstname and lastname are required'}, 400
         
         base_suggestions = [
-            f'{firstname}{lastname}',
-            f'{firstname}_{lastname}',
+            # f'{firstname}{lastname}',
+            # f'{firstname}_{lastname}',
             f'{firstname}{random.randint(100,999)}',
             f"{lastname}_{random.randint(1, 100)}",
             f"{firstname[0]}{lastname}",
@@ -124,7 +124,7 @@ class UsernameSuggestion(Resource):
                 break
 
         # Fallback Generator: if all suugestions are taken. Others are generated
-        while len(suggestions) < 3:
+        while len(suggestions) < 4:
             alt = f"{firstname}{random.randint(1000,9999)}"
 
             if not User.query.filter_by(username=alt).first():
