@@ -432,6 +432,7 @@ class Users(Resource):
                 "email":user.email,
                 "role":user.role,
                 "is_admin":user.is_admin,
+                "profile_image":user.profile_image,
             }
 
             users_list.append(user_dict)
