@@ -191,7 +191,7 @@ class SignUp(Resource):
         db.session.commit()  
 
         return{
-            'message': 'User created succesfully',
+            'message': 'User created successfully',
             'user': {
                 'id':new_user.id,
                 'firstname':new_user.firstname,
@@ -243,7 +243,6 @@ class Login(Resource):
              }
          },200
          
-
 api.add_resource(Login, '/login')        
 
 
@@ -589,7 +588,7 @@ class Projects(Resource):
             new_project = Project(
                 title = data['title'],
                 description = data['description'],
-                # images = data['images]
+                images = data['image']
             )
 
             db.session.add(new_project)

@@ -58,7 +58,7 @@ class Project(db.Model, SerializerMixin):
             "title":self.title,
             "description":self.description,
             "date_added":self.date_added.isoformat(),
-            # "images":[image.to_dict() for image in self.image] if self.image else []
+            "images":[image.to_dict() for image in self.images] if self.images else []
         }
     
     # isoformat(): makes datetime JSON serializable
