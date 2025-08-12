@@ -45,9 +45,7 @@ class Project(db.Model, SerializerMixin):
     subtitle = db.Column(db.String(200), nullable=False)
     description = db.Column(db.String, nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # One to many relationship
-    images = db.relationship('Image', back_populates='project',cascade='all, delete-orphan')
+    images = db.Column(db.JSON, nullable=False)  # Assuming images is a JSON field containing image URLs or objects
     # want images to be deleted when a project is deleted, set cascade
 
     def __repr__(self):
@@ -57,45 +55,13 @@ class Project(db.Model, SerializerMixin):
         return{
             "id":self.id,
             "title":self.title,
+            "subtitle":self.subtitle,
             "description":self.description,
             "date_added":self.date_added.isoformat(),
-            "images":[image.to_dict() for image in self.images] if self.images else []
+            "images": self.images
         }
     
     # isoformat(): makes datetime JSON serializable
-
-
-class Image(db.Model, SerializerMixin):
-    __tablename__ = 'images'
-
-    id = db.Column(db.Integer, primary_key=True)
-    caption = db.Column(db.String(100), nullable=False)
-    url = db.Column(db.String, nullable=False)
-    date_added = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # To control images to be used in the gallery
-    is_in_gallery = db.Column(db.Boolean, default=False, nullable=False)
-
-    # Foreign ID
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
-    #   nullable=True since not all the images will be used for the projects
-
-    # Relationship
-    project = db.relationship('Project', back_populates='images')  
-    
-    def __repr__(self):
-        return f"<Image {self.caption}>"
-    
-    def to_dict(self):
-        return {
-            "id":self.id,
-            "caption":self.caption,
-            "url":self.url,
-            "date_added":self.date_added.isoformat(),
-            "is_in_gallery":self.is_in_gallery,
-            "project_id":self.project_id,
-        }
-    
 
 
 class Downloads(db.Model, SerializerMixin):

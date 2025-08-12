@@ -602,6 +602,53 @@ class Projects(Resource):
             
 api.add_resource(Projects, '/projects')
 
+class ProjectsById(Resource):
+
+    # Displaying a project by ID
+    def get(self, id):
+        project = Project.query.get(id)
+
+        if not project:
+            return {'error': 'Project not found'}, 404
+        
+        return make_response(project.to_dict(),200)
+    
+    # Updating a project by ID
+    @jwt_required()
+    def patch(self, id):
+        project = Project.query.get(id)
+
+        if not project:
+            return {'error': 'Project not found'}, 404
+        
+        data = request.get_json()
+
+        try:
+            for attr in data:
+                setattr(project, attr, data[attr])
+
+            db.session.commit()
+
+            return make_response(project.to_dict(),200)
+        
+        except Exception as e:
+            return {"error": "Validation errors", "details": str(e)}, 400
+    
+    # Deleting a project by ID
+    @jwt_required()
+    def delete(self, id):
+        project = Project.query.get(id)
+
+        if not project:
+            return {'error': 'Project not found'}, 404
+        
+        db.session.delete(project)
+        db.session.commit()
+
+        return {'message': 'Project deleted successfully'}, 200
+
+api.add_resource(ProjectsById, '/projects/<int:id>')
+
 
 
 # ____________________________________________________________________________________________________________________________________________

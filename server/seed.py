@@ -1,5 +1,5 @@
 from app import app
-from models import db, User, Project, Image, Downloads, BlogPost
+from models import db, User, Project, Downloads, BlogPost
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 from faker import Faker
@@ -21,7 +21,7 @@ fake= Faker()
 with app.app_context():
     db.session.query(User).delete()
     db.session.query(Project).delete()
-    db.session.query(Image).delete()
+    # db.session.query(Image).delete()
     db.session.query(Downloads).delete()
     db.session.query(BlogPost).delete()
 
@@ -33,7 +33,6 @@ with app.app_context():
     for i in range(1,11):
         is_admin = random.choice([True, False])
       
-
         user = User(
             firstname=fake.first_name(),
             lastname=fake.last_name(),
@@ -47,14 +46,28 @@ with app.app_context():
         users.append(user)
 
     print('\nAdding Projects...')
-    projects = [
-        Project(title=f'Engineering Project {i}', subtitle=f'Subtitle for project {i}', description=f'Description of project {i}') for i in range(1, 11)
-    ]
+    projects = []
+    for i in range(1, 11):
+        project = Project(
+            title=f'Engineering Project {i}', 
+            subtitle=f'Subtitle for project {i}', 
+            description=f'Description of project {i}',
+            images=[
+                f'https://robohash.org/project{i}?set=set1',
+                f'https://robohash.org/project{i}?set=set2',
+                f'https://robohash.org/project{i}?set=set3',
+                f'https://robohash.org/project{i}?set=set4'
+            ]
+        )
+        projects.append(project)
 
-    print('\nAdding Images...  ')
-    images = [
-        Image(caption=f'Project {i} Image', url=f'/static/images/project{i}.jpg', is_in_gallery= random.choice([True, False]), project=projects[i-1]) for i in range(1, 11)
-    ]
+    # print('\nAdding Images...  ')
+    # images = [
+    #     Image(
+    #         caption=f'Project {i} Image', 
+    #         url = f'https://robohash.org/project{i}?set=set1',
+    #         project=projects[i-1]) for i in range(1, 11)
+    # ]
  
     print('\nAdding Downloads...  ')
     downloads = [
@@ -76,7 +89,7 @@ with app.app_context():
         ) for i in range(1, 11)
     ]
 
-    db.session.add_all(users + projects + images + downloads + blog_posts)
+    db.session.add_all(users + projects + downloads + blog_posts)
     db.session.commit()
 
     print('________________________________________________________________________________________________')
