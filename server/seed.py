@@ -48,7 +48,7 @@ with app.app_context():
 
     print('\nAdding Projects...')
     projects = [
-        Project(title=f'Engineering Project {i}', description=f'Description of project {i}') for i in range(1, 11)
+        Project(title=f'Engineering Project {i}', subtitle=f'Subtitle for project {i}', description=f'Description of project {i}') for i in range(1, 11)
     ]
 
     print('\nAdding Images...  ')
