@@ -31,15 +31,16 @@ with app.app_context():
     print('\nAdding users...')
     users = []
     for i in range(1,11):
-        is_admin = random.choice([True, False])
+        # is_admin = random.choice([True, False])
       
         user = User(
             firstname=fake.first_name(),
             lastname=fake.last_name(),
             username=f'user{i}',
             email=f'user{i}@domain.com',
-            role='admin' if is_admin else random.choice(roles),
-            is_admin=is_admin,
+            role='admin', #if is_admin else random.choice(roles),
+            # is_admin=is_admin,
+            is_admin=True,
             password=generate_password_hash(random_password),
             profile_image = f'https://robohash.org/user{i}?set=set5'
         )
